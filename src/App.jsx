@@ -9,6 +9,7 @@ import DashboardPage from './pages/DashboardPage';
 import SendMoneyPage from './pages/SendMoneyPage';
 import SavingsPage from './pages/SavingsPage';
 import SettingsPage from './pages/SettingsPage';
+import CustomersPage from './pages/CustomersPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 const queryClient = new QueryClient({
@@ -76,6 +77,14 @@ function DashboardLayout() {
             style={({ isActive }) => (isActive ? { background: 'var(--color-brand-light)', color: 'var(--color-brand-dark)' } : { color: 'var(--color-text-secondary)' })}
           >
             💸 Send Money
+          </NavLink>
+          <NavLink
+            to="/customers"
+            onClick={() => setMobileMenuOpen(false)}
+            className="px-3 py-2 rounded-lg text-sm font-medium"
+            style={({ isActive }) => (isActive ? { background: 'var(--color-brand-light)', color: 'var(--color-brand-dark)' } : { color: 'var(--color-text-secondary)' })}
+          >
+            👥 Customers
           </NavLink>
           <NavLink
             to="/savings"
@@ -253,6 +262,7 @@ export default function App() {
                   <Route element={<DashboardLayout />}>
                     <Route path="/" element={<DashboardPage />} />
                     <Route path="/send" element={<SendMoneyPage />} />
+                    <Route path="/customers" element={<CustomersPage />} />
                     <Route path="/savings" element={<SavingsPage />} />
                     <Route path="/settings" element={<SettingsPage />} />
                   </Route>

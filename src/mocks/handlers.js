@@ -41,6 +41,57 @@ let cachedTransactions = generateTransactions(15);
 // Track dynamic balance (in kobo - starts at 2,450,000 NGN = 245,000,000 kobo)
 let currentBalance = 245000000;
 
+// Seed customers (app format — mirrors CustomerAdapter output)
+let cachedCustomers = [
+  {
+    id: 1001,
+    customer_code: 'CUS_a1b2c3d4',
+    email: 'ada.obi@email.com',
+    firstName: 'Ada',
+    lastName: 'Obi',
+    phone: '08031234567',
+    metadata: {},
+    risk_action: 'default',
+    international_phone_format: '+234 803 123 4567',
+    createdAt: '2026-01-12T09:24:00.000Z',
+    updatedAt: '2026-01-12T09:24:00.000Z',
+    fullName: 'Ada Obi',
+    initial: 'AO',
+  },
+  {
+    id: 1002,
+    customer_code: 'CUS_e5f6g7h8',
+    email: 'musa.bello@email.com',
+    firstName: 'Musa',
+    lastName: 'Bello',
+    phone: '08098765432',
+    metadata: {},
+    risk_action: 'allow',
+    international_phone_format: '+234 809 876 5432',
+    createdAt: '2026-02-03T14:10:00.000Z',
+    updatedAt: '2026-02-03T14:10:00.000Z',
+    fullName: 'Musa Bello',
+    initial: 'MB',
+  },
+  {
+    id: 1003,
+    customer_code: 'CUS_i9j0k1l2',
+    email: 'chiamaka.okafor@email.com',
+    firstName: 'Chiamaka',
+    lastName: 'Okafor',
+    phone: '07011223344',
+    metadata: {},
+    risk_action: 'default',
+    international_phone_format: '+234 701 122 3344',
+    createdAt: '2026-03-21T18:45:00.000Z',
+    updatedAt: '2026-03-21T18:45:00.000Z',
+    fullName: 'Chiamaka Okafor',
+    initial: 'CO',
+  },
+];
+
+let nextCustomerId = 1004;
+
 export const handlers = [
   // ─── GET /api/balance ───
   http.get('/api/balance', async () => {
@@ -140,5 +191,81 @@ export const handlers = [
         { id: 3, icon: '💡', headline: 'Airtime tip', detail: 'You spent ₦45,000 on airtime this month — 20% above average.', confidence: 0.78 },
       ],
     });
+  }),
+
+  // ─── GET /api/customers ───
+  http.get('/api/customers', async () => {
+    await delay(600);
+    return HttpResponse.json({ customers: cachedCustomers });
+  }),
+
+  // ─── GET /api/customers/:id ───
+  http.get('/api/customers/:id', async ({ params }) => {
+    await delay(400);
+    const customer = cachedCustomers.find(
+      c => String(c.id) === String(params.id) || c.customer_code === params.id || c.email === params.id
+    );
+    if (!customer) {
+      return HttpResponse.json({ error: 'Customer not found' }, { status: 404 });
+    }
+    return HttpResponse.json({ customer });
+  }),
+
+  // ─── POST /api/customers ───
+  http.post('/api/customers', async ({ request }) => {
+    await delay(900);
+    const body = await request.json();
+
+    if (cachedCustomers.some(c => c.email.toLowerCase() === body.email?.toLowerCase())) {
+      return HttpResponse.json(
+        { error: 'A customer with this email already exists.' },
+        { status: 400 }
+      );
+    }
+
+    const now = new Date().toISOString();
+    const newCustomer = {
+      id: nextCustomerId++,
+      customer_code: `CUS_${Date.now().toString(36)}`,
+      email: body.email,
+      firstName: body.firstName || '',
+      lastName: body.lastName || '',
+      phone: body.phone || '',
+      metadata: body.metadata || {},
+      risk_action: 'default',
+      international_phone_format: body.phone ? `+234 ${body.phone}` : '',
+      createdAt: now,
+      updatedAt: now,
+      fullName: `${body.firstName || ''} ${body.lastName || ''}`.trim(),
+      initial: `${(body.firstName || '?').charAt(0)}${(body.lastName || '').charAt(0)}`.toUpperCase(),
+    };
+    cachedCustomers = [newCustomer, ...cachedCustomers];
+    return HttpResponse.json({ success: true, customer: newCustomer }, { status: 201 });
+  }),
+
+  // ─── PUT /api/customers/:id ───
+  http.put('/api/customers/:id', async ({ params, request }) => {
+    await delay(900);
+    const body = await request.json();
+    const index = cachedCustomers.findIndex(
+      c => String(c.id) === String(params.id) || c.customer_code === params.id
+    );
+    if (index === -1) {
+      return HttpResponse.json({ error: 'Customer not found' }, { status: 404 });
+    }
+
+    const existing = cachedCustomers[index];
+    const updated = {
+      ...existing,
+      email: body.email ?? existing.email,
+      firstName: body.firstName ?? existing.firstName,
+      lastName: body.lastName ?? existing.lastName,
+      phone: body.phone ?? existing.phone,
+      fullName: `${body.firstName ?? existing.firstName} ${body.lastName ?? existing.lastName}`.trim(),
+      initial: `${(body.firstName ?? existing.firstName).charAt(0)}${(body.lastName ?? existing.lastName).charAt(0)}`.toUpperCase(),
+      updatedAt: new Date().toISOString(),
+    };
+    cachedCustomers = cachedCustomers.map((c, i) => (i === index ? updated : c));
+    return HttpResponse.json({ success: true, customer: updated });
   }),
 ];
